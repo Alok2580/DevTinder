@@ -147,42 +147,156 @@ const app =express();
 const connectDB=require("./config/database.js");
 
 const User = require("./models/user.js");
+// const{ inadminAuth,userAuth,index_sync}=require("./middleware/auth.js")
+
+app.use(express.json()); // middleware 
+
+// searching a user via its emailId
+
+app.get("/user", async (req,res)=>{
+    // await User.syncIndexes();
+
+    const userEmail=req.body.emailId;
+
+    try{
+
+        const users = await User.findOne({emailId:userEmail});
+        if(users.length == 0) {
+            res.send("user not found");
+        }
+        else
+        res.send(users);
+    }
 
 
-app.post("/signUp",async (req,res)=>{
-    const user = new User({
-        firstName:"nalla",
-        lastName:"lol",
-        emailId:"nalla@gmail.com",
-        password:"nallalol",
-        age:"17"
-
-    });
-try{
-    await user.save();
-}
-catch(err){
-
-    res.status(400).send("error in saving the data",err.message);
-}
-
-//   console.log("user saved successfully");
-
-    res.send("user Added successfully");
+    catch(err){
+        res.status(401).send("something went wrong");
+    }
 
 })
 
 
+
+
+// feed api / get all the users;
+
+app.get("/feed",async (req,res)=>{
+
+    try{
+        const users=  await User.find({});
+        if(users.length==0){
+            res.status(400).send("no user in your feed");
+        }
+        else{
+            res.send(users);
+        }
+    }
+
+    catch(err){
+
+        res.status(400).send("something went wrong");
+
+    }    
+
+
+})
+
+// deleting a user
+
+
+app.delete("/user",async (req,res)=>{
+    const userId=req.body._id;
+
+    try{
+   await User.findByIdAndDelete(userId);
+   res.send("user deleted successfully");
+
+    }
+
+    catch(err){
+        res.status(400).send("something went wrong")
+    }
+
+
+})
+
+// updating user info
+
+app.patch("/user",async (req,res)=>{
+    
+    const email=req.body.emailId;
+    const data= req.body;
+        // console.log(email);
+    
+    if(email===undefined) {
+        res.status(400).send("user not found");
+    }
+
+    const filter={emailId:email};
+    const update=data;
+    // console.log(update);
+    const options={new:true};
+
+try{
+
+    
+const doc = await User.findOneAndUpdate(filter,update,options);
+console.log(doc);
+res.send("user updated successfully");
+
+}
+
+catch(err){
+    res.status(400).send("something went wrong");
+}
+
+})
+
+// user singUp api
+
+
+app.post("/signUp",async (req,res)=>{
+   
+  
+    
+    // console.log(req.body);
+    const user = new User(req.body);
+
+try{
+
+
+    await user.save();
+    
+console.log("user was saved");
+
+}
+
+catch(err){
+
+    console.log("there was error");
+    res.status(400).send("erorr in saving user");
+    
+}
+
+res.send("user added successfully");
+
+//   console.log("user saved successfully");
+
+})
+
 connectDB().then(()=>{
+
     console.log("database connected successfully");
 
-    app.listen(1234,()=>{
+    app.listen(8086,()=>{
 
-        console.log("server is successfully running at port 1234")
+        console.log("server is successfully running at port 8086")
     
     });
 
 }).catch((err)=>{
+
     console.log("not connected to the database");
 
-})
+  })
+  

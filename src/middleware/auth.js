@@ -13,7 +13,6 @@ const adminAuth= (req,res,next)=>{
     }
 };
 
-
 const userAuth=(req,res,next)=>{
     let token="xyza";
 

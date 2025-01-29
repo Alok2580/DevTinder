@@ -13,6 +13,7 @@ feedRouter.get("/feed",async (req,res)=>{
             res.send(users);
         }
     }
+    
 
     catch(err){
 

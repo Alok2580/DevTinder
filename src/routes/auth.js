@@ -4,23 +4,19 @@ const authRouter= express.Router();
 const bcrypt= require("bcrypt");
 const jwt =require("jsonwebtoken");
 const User = require("../models/user.js");
+const {userAuth,id}= require("../middleware/auth.js");
+
 
 
 authRouter.post("/signUp",async (req,res)=>{
 
 try{
-
-    
     // validateSignupData(req);
-
     const {firstName, lastName, emailId,password}=req.body;
-
     const saltrounds=10;
-
-
     const passwordHash= await bcrypt.hash(password,saltrounds);
-
     // const user = new User(
+
 
     //     // firstName,lastName,emailId,password:passwordHash,
     //     req.body
@@ -36,6 +32,7 @@ try{
         password:passwordHash,
         
     })
+    
 
     // user.password=passwordHash;
 
@@ -92,6 +89,7 @@ authRouter.post("/login",async (req,res)=>{
         }
     
         else{
+
     
             throw new Error("user password is invalid");
     
@@ -103,6 +101,8 @@ authRouter.post("/login",async (req,res)=>{
     
     }
     
+
+    
     catch(err){
     
         res.status(401).send("Error: "+ err.message);
@@ -110,6 +110,17 @@ authRouter.post("/login",async (req,res)=>{
     }
     
     });
+
+
+    authRouter.post("/logout", userAuth, async (req, res) => {
+        res.cookie("token", null, {
+            expires: new Date(Date.now()),
+            httpOnly: true
+        });
+
+        res.send("user logged out successfully");
+    });
+
 
     module.exports= authRouter;
     

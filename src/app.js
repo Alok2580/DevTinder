@@ -1,16 +1,7 @@
 const express= require('express');
-
 const app =express();
-
 const connectDB=require("./config/database.js");
-
-const User = require("./models/user.js");
-const {userAuth,id}= require("./middleware/auth.js");
-
-const bcrypt= require("bcrypt");
-const {validateSignupData}= require("./utils/validation.js");
 const cookieParser = require('cookie-parser');
-const jwt =require("jsonwebtoken");
 
 
 app.use(express.json()); // middleware
@@ -24,12 +15,15 @@ const profileRouter= require("./routes/profile.js");
 const requestRouter= require("./routes/requests.js");
 const userRouter =require("./routes/user.js");
 
-// app.use("/",authRouter,feedRouter,profileRouter,requestRouter,userRouter);
-app.use("/",authRouter);
-app.use("/",feedRouter);
-app.use("/",profileRouter)
-app.use("/",requestRouter)
-app.use("/",userRouter);
+
+app.use("/",authRouter,feedRouter,profileRouter,requestRouter,userRouter);
+
+// app.use("/",authRouter);
+// app.use("/",feedRouter);
+// app.use("/",profileRouter)
+// app.use("/",requestRouter)
+// app.use("/",userRouter);
+
 
 
 

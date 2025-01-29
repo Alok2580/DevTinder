@@ -1,41 +1,116 @@
 const mongoose= require("mongoose");
+const validator= require("validator");
+// const {jwt} = require("jsonwebtoken");
+const jwt =require("jsonwebtoken");
+const bcrypt=require("bcrypt")
+
+// console.log(validator);
 const userSchema= new mongoose.Schema({
+
     firstName:{
         type:String,
         required:true,
+    validate(value){
+        if(!validator.isAlphanumeric(value)){
+            throw new Error("not a valid name");
+        }
+
+    },
+
+    minLength:3,
+    maxLength:50
+
         // unique:true
     },
+
 
     lastName:{
         type:String
     },
+
     emailId:{
         type:String,
         unique:true,
         required:true,
         lowercase:true,
         trim:true,
-        minlength:10
+        validate(value){
+            if(!validator.isEmail(value)){
+                throw new Error("invalid email formate")
+                // res.status(400).send("this is not correct email formate");
+
+            }
+        },
+
+        minlength:10,
+        maxLength:50
     },
+
+
     password:{
         type:String,
         required:true,
+        minLength:4,
+        maxLength:2000
+
     },
+       
     age:{
-        type:String
+        type:String,
+        validate(value){
+            if(!validator.isNumeric(value)){
+                throw new Error("age is not a valid number");
+            }
+
+        }
+        ,
+        min:18,
+        max:100
     }
     ,
     gender:{
-        type:String
-    },
+        
+        type:String,
+        validate(value){
+
+            if(!["male","female","others"].includes(value)){
+                throw new Error("not valid form of gender")
+            }
+          
+        }
+      
+},
+
     bio:{
         type:String,
-        default:"hi I am on on devTinder , I want ot connect with other developers"
+        default:"hi I am on on devTinder , I want to connect with other developers"
     },
+
     skills:{
         type:[String]
-    }
+    },
 
-})
+ 
+}
+,
+{
+    timestamps:true,
+});
+
+userSchema.methods.getJWT=async function(){
+    const user=this;
+    const token = await jwt.sign({_id:user._id},"DEVTinder@790",{expiresIn:'1h'});
+    return token;
+}
+
+
+userSchema.methods.validatePassword= async function(password){
+
+  const isValidPassword= await bcrypt.compare(password,this.password);
+  return isValidPassword;
+
+}
+
+
 
 module.exports=mongoose.model("User",userSchema);

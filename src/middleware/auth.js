@@ -1,29 +1,46 @@
-const adminAuth= (req,res,next)=>{
-    console.log("data for the admin");
-    let token="xyzadfssa";
-    if(token=="xyz"){
-        // res.send("here is data for the admin");
-        next();
-    }
+const jwt= require("jsonwebtoken");
+const User= require("../models/user");
 
-    else{
-        res.status(401);
-        res.send("unauthorized access");
-      
-    }
-};
 
-const userAuth=(req,res,next)=>{
-    let token="xyza";
+const userAuth=async (req,res,next)=>{
+   // find the token from the cookie which is present in req
+   try{
+    
 
-    if(token==="xyz"){
-        // res.send("user is authorized for this task");
-        next();
-    }
+   const {token}=req.cookies;
 
-    else{
-        res.status(401).send("unauthorized user access !");
-    }
+
+
+      // if token is not valid throw the error
+   if(!token) throw new Error("token is not valid");
+      // validate the token
+
+      const decoded= await jwt.verify(token,"DEVTinder@790");
+
+   // if token is valid then find the user_id in decode of the token
+   const {_id}=decoded;
+
+   // from user_id find the user 
+   const user = await User.findById(_id);
+
+   // if user does not exit throw error
+   if(!user){
+
+    throw new Error("user does not exits");
+
+   }
+
+   req.user=user;
+   // if user exith call the next request handler 
+   next();
+
 
 }
-module.exports={adminAuth,userAuth};
+
+catch(err){
+    res.status(400).send("Error: "+ err.message);
+}
+
+
+}
+module.exports={userAuth};

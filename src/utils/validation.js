@@ -22,5 +22,23 @@ const validateProfileData = (req)=>{
     
 }
 
-module.exports={validateSignupData,validateProfileData};
+
+const validateNewPassword =(req)=>{
+    const allowedProfileFields=["password"];
+    const isAllowed = Object.keys(req.body).every((key)=>{
+//   if(  key!="password") return false;
+const ans=allowedProfileFields.includes(key);
+if(!ans) return false;
+
+    });
+    
+
+    if(isAllowed &&validator.isStrongPassword(req.body.password)) return true;
+    else return false;
+
+    // return validator.isStrongPassword(password);
+}
+
+
+module.exports={validateSignupData,validateProfileData,validateNewPassword};
 

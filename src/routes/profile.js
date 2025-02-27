@@ -2,8 +2,9 @@ const express= require("express");
 const profileRouter= express.Router();
 const {userAuth,id}= require("../middleware/auth.js");
 const User=require("../models/user.js");
-const {validateProfileData}= require("../utils/validation.js");
+const {validateProfileData,validateNewPassword}= require("../utils/validation.js");
 profileRouter.use(express.json());
+
 profileRouter.get("/profile/view", userAuth ,async (req,res)=>{
 
     try{
@@ -29,6 +30,7 @@ try{
   if(!validateProfileData(req)){
     throw new Error("invalid edit request");
   }
+
   else{
     const loggedInUser=req.user;
     console.log(loggedInUser);
@@ -66,8 +68,23 @@ catch(err){
 })
 
 
+profileRouter.patch("/profile/password",userAuth,async (req,res)=>{
+try{
 
+  validateNewPassword(req);
 
+  const loggedInUser= req.user;
+  loggedInUser.password=req.body.password;
+  await loggedInUser.save();
+res.send("password updated successfully");
+
+}
+
+catch(err){
+  res.status(401).send("Error :" +err.message);
+}
+
+})
 
 
 module.exports= profileRouter;

@@ -2,15 +2,19 @@ const express= require("express");
 
 const authRouter= express.Router();
 const bcrypt= require("bcrypt");
+
 const jwt =require("jsonwebtoken");
+
 const User = require("../models/user.js");
+
 const {userAuth,id}= require("../middleware/auth.js");
 
 
 
-authRouter.post("/signUp",async (req,res)=>{
+  authRouter.post("/signUp",async (req,res)=>{
 
 try{
+
     // validateSignupData(req);
     const {firstName, lastName, emailId,password}=req.body;
     const saltrounds=10;
@@ -42,7 +46,9 @@ try{
 
     
     await user.save();
-    
+
+
+
 console.log("user was saved");
 res.send("user added successfully")
 
@@ -60,8 +66,9 @@ catch(err){
 //   console.log("user saved successfully");
 
 });
-    
-authRouter.post("/login",async (req,res)=>{
+
+
+    authRouter.post("/login",async (req,res)=>{
 
     try{
         
@@ -73,15 +80,14 @@ authRouter.post("/login",async (req,res)=>{
       }
     
       
-        const isValidPassword=user.validatePassword(password);
+        const isValidPassword =user.validatePassword(password);
     
     
        if(isValidPassword){
     
             const token =await  user.getJWT();
             // console.log(token);
-    
-    
+
             res.cookie("token",token,{expires: new Date(Date.now()+9000000),httpOnly:true});
             // res.
             res.send("user logged in successfully");
@@ -99,10 +105,8 @@ authRouter.post("/login",async (req,res)=>{
         //     throw new Error("invalid password");
         // }
     
-    }
-    
+    }   
 
-    
     catch(err){
     
         res.status(401).send("Error: "+ err.message);
@@ -110,7 +114,6 @@ authRouter.post("/login",async (req,res)=>{
     }
     
     });
-
 
     authRouter.post("/logout", userAuth, async (req, res) => {
         res.cookie("token", null, {
@@ -121,6 +124,4 @@ authRouter.post("/login",async (req,res)=>{
         res.send("user logged out successfully");
     });
 
-
-    module.exports= authRouter;
-    
+module.exports = authRouter;

@@ -18,6 +18,7 @@ const userRouter =require("./routes/user.js");
 
 app.use("/",authRouter,feedRouter,profileRouter,requestRouter,userRouter);
 
+
 // app.use("/",authRouter);
 // app.use("/",feedRouter);
 // app.use("/",profileRouter)
@@ -40,10 +41,8 @@ connectDB().then(()=>{
 
 
 
-}).catch((err)=>{
+    }).catch((err)=>{
 
     console.log("not connected to the database"+ err.message);
 
-  })
-
-  
+    })

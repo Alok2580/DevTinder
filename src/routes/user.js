@@ -1,53 +1,71 @@
 const express= require("express");
+
 const userRouter= express.Router();
 const User = require("../models/user.js");
+const ConnectionRequest = require("../models/connectionRequest.js");
+
+const {userAuth}  = require("../middleware/auth.js");
+
 
 const bcrypt= require("bcrypt");
+
+
+const { contentType } = require("express-cookie/lib/response.js");
+const { connection } = require("mongoose");
+
+
+const USER_SAFE_DATA = "firstName lastName gender age ";
 
 userRouter.get("/user", async (req,res)=>{
 
     // await User.syncIndexes();
 
-    const userEmail=req.body.emailId;
+
+    const userEmail  =  req.body.emailId;
 
     try{
 
-
         const users = await User.findOne({emailId:userEmail});
         if(users.length == 0) {
+
             res.send("user not found");
+
         }
+
         else
         res.send(users);
 
     }
 
+
     catch(err){
 
         res.status(401).send("something went wrong"+err.message);
+
     }
+
 
 })
 
 
-userRouter.patch("/user",async (req,res)=>{
+    userRouter.patch("/user",async (req,res)=>{
     
     const email=req.body.emailId;
     const data= req.body;
         // console.log(email);
     const userId=req.body._id;
-    if(userId===undefined) {
+
+    if( userId===undefined ) {
         res.status(400).send("user not found");
     }
 
-    const filter={_id:userId};
+    const filter={ _id:userId  };
     const update=data;
     // console.log(update);
     const options={new:true};
 
 try{
 
-    
 const doc = await User.findOneAndUpdate(filter,update,options);
 console.log(doc);
 res.send("user updated successfully");
@@ -60,23 +78,170 @@ catch(err){
 
 })
 
-
-
 userRouter.delete("/user",async (req,res)=>{
 
-    const userId=req.body._id;
+    
 
     try{
+
+        const userId=req.body._id;
+
+        const doesUserExists = await User.findById(userId);
+     
+        if(!doesUserExists) {
+            throw new Error(" this user does not exists");
+           
+
+        }
+
    await User.findByIdAndDelete(userId);
+
    res.send("user deleted successfully");
 
     }
 
     catch(err){
+
         res.status(400).send("something went wrong"+ err.message)
+
     }
 
+});
+// get all pending connection request for logged in user 
+ userRouter.get("/user/requests/received",userAuth,async (req,res)=>{
+
+
+
+    const loggedInUser = req.user;
+    const connectionRequests  = await  ConnectionRequest.find({
+        toUserId:loggedInUser.id,
+        status:"interested"
+    }).populate("fromUserId","firstName lastName");
+    // .populate("fromUserId",["firstName","lastName"]);
+
+
+    res.json({
+
+        message:"connections fetched successfully",
+        data: connectionRequests,
+
+    })
+
+
+//    const senders=[];
+
+// for(const element of connectionRequests){
+    
+//         const sender = await ConnectionRequest.findById(element._id);
+//         const senderFirstName = await User.findById(sender.fromUserId);
+//         senders.push(senderFirstName.firstName);
+
+// }
+
+// console.log(connectionRequests);
+
+    // res.send(senders);
 
 })
 
-module.exports= userRouter;
+
+  userRouter.get("/user/requests/accepted",userAuth,async (req,res)=>{
+
+    try{
+    const loggedinUser= req.user;
+    const connectionRequests = await ConnectionRequest.find({
+        $or :  [
+            {
+                toUserId:loggedinUser._id,
+
+            },{
+                fromUserId:loggedinUser._id,
+            }
+
+        ],
+
+        status:"accepted"
+    }).populate("fromUserId", USER_SAFE_DATA)
+    .populate("toUserId",USER_SAFE_DATA);
+
+    const data = connectionRequests.map(row => {
+
+        if(row.toUserId._id.toString() === loggedinUser._id.toString()){
+            return row.fromUserId;
+        }
+        else return row.toUserId;
+        // row.fromUserId
+    
+      });
+
+      res.json({
+
+        message:"your connections : ",
+        data
+
+    })
+}
+catch(err){
+    res.status(400).send("ERROR: "+ err.message)
+}
+
+      });
+
+
+   userRouter.get("/user/feed",userAuth, async (req,res)=>{
+
+   try{
+
+    const loggedInUser = req.user;
+    // const allUsers = await User.find({});
+    const page = parseInt(req.query.page)||1;
+    let limit  = parseInt(req.query.limit)||10;
+    limit = limit>50 ? 50: limit;
+    const skip = (page-1)*limit;
+
+
+    // console.log(allUsers);
+     
+    const connectionRequests = await ConnectionRequest.find({
+        $or: [
+            {fromUserId: loggedInUser._id},
+            {toUserId: loggedInUser._id}
+        ]
+    }).select("fromUserId toUserId");
+
+    
+    const userToBeHide = new Set();
+
+    connectionRequests.forEach(element => {
+        userToBeHide.add(element);        
+    });
+
+    const users = await User.find({
+        $and:[
+            {
+
+           _id:{ $nin: Array.from(userToBeHide)},
+           },
+
+          {
+            _id:{$ne:loggedInUser._id} 
+          },
+    ]
+    }).select(USER_SAFE_DATA).skip(skip).limit(limit);
+
+     res.json({
+        message:"feed",
+        data:users
+     })
+  
+    }
+
+    catch(err){
+    res.status(400).send(" something went wrong "+  err.message);
+}
+
+
+
+   });
+
+     module.exports = userRouter;

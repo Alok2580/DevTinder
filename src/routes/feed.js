@@ -2,7 +2,7 @@ const express= require("express");
 const feedRouter= express.Router();
 const User = require("../models/user.js");
 
-feedRouter.get("/feed",async (req,res)=>{
+feedRouter.get("/feed1",async (req,res)=>{
 
     try{
         const users=  await User.find({});

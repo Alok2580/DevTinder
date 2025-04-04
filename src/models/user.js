@@ -5,6 +5,7 @@ const jwt =require("jsonwebtoken");
 const bcrypt=require("bcrypt")
 
 // console.log(validator);
+
 const userSchema= new mongoose.Schema({
 
     firstName:{
@@ -16,17 +17,26 @@ const userSchema= new mongoose.Schema({
         }
 
     },
-
+    
     minLength:3,
     maxLength:50
-
-        // unique:true
+  // unique:true
     },
+
 
 
     lastName:{
         type:String
     },
+
+
+    photoId:{
+        type:String,
+        default:"https://res.cloudinary.com/ddu6tybft/image/upload/v1742545381/user_pic_n43way.jpg",
+    
+
+    },
+
 
     emailId:{
         type:String,
@@ -34,7 +44,9 @@ const userSchema= new mongoose.Schema({
         required:true,
         lowercase:true,
         trim:true,
+
         validate(value){
+            
             if(!validator.isEmail(value)){
                 throw new Error("invalid email formate")
                 // res.status(400).send("this is not correct email formate");
@@ -48,6 +60,7 @@ const userSchema= new mongoose.Schema({
 
 
     password:{
+
         type:String,
         required:true,
         minLength:4,
@@ -62,12 +75,13 @@ const userSchema= new mongoose.Schema({
                 throw new Error("age is not a valid number");
             }
 
-        }
-        ,
+        },
+
         min:18,
         max:100
-    }
-    ,
+
+    },
+
     gender:{
         
         type:String,
@@ -81,20 +95,24 @@ const userSchema= new mongoose.Schema({
       
 },
 
+
     bio:{
+
         type:String,
         default:"hi I am on on devTinder , I want to connect with other developers"
+
     },
+
 
     skills:{
         type:[String]
     },
 
- 
-}
-,
+},
+
 {
     timestamps:true,
+    
 });
 
 userSchema.methods.getJWT=async function(){
@@ -104,13 +122,12 @@ userSchema.methods.getJWT=async function(){
 }
 
 
-userSchema.methods.validatePassword= async function(password){
+userSchema.methods.validatePassword= async function(passwordByUser){
+// console.log("hello",passwordByUser,this.password);
 
-  const isValidPassword= await bcrypt.compare(password,this.password);
+  const isValidPassword = await bcrypt.compare(passwordByUser, this.password);
   return isValidPassword;
 
 }
 
-
-
-module.exports=mongoose.model("User",userSchema);
+module.exports =  mongoose.model("User",userSchema);

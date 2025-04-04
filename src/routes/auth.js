@@ -9,15 +9,14 @@ const User = require("../models/user.js");
 
 const {userAuth,id}= require("../middleware/auth.js");
 
-
-
   authRouter.post("/signUp",async (req,res)=>{
 
 try{
 
     // validateSignupData(req);
-    const {firstName, lastName, emailId,password}=req.body;
-    const saltrounds=10;
+    const {firstName, lastName, photoId,age, gender,bio,emailId,password}=req.body;
+    const saltrounds = 10;
+    // console.log(photoId);
     const passwordHash= await bcrypt.hash(password,saltrounds);
     // const user = new User(
 
@@ -27,12 +26,14 @@ try{
 
     // );
 
-
-
     const user = new User({
         firstName,
         lastName,
+        photoId,
         emailId,
+        age,
+        gender,
+        bio,
         password:passwordHash,
         
     })
@@ -45,22 +46,30 @@ try{
     // user.password=new_password;
 
     
-    await user.save();
+   const savedUser=  await user.save();
+   const token = await savedUser.getJWT();
+
+   res.cookie("token",token,{
+    expires:new Date(Date.now()+ 8*3600000)
+   });
 
 
+// console.log("user was saved");
+res.json({
 
-console.log("user was saved");
-res.send("user added successfully")
+    message:"user signedUP successfully ",
+    data:savedUser,
+}
+);
 
 }
+
 
 catch(err){
-
-    console.log("there was error");
+    // console.log("there was error");
     res.status(400).send(" erorr in saving user "+ err.message);
-
-    
 }
+
 
 // res.send("user added successfully");
 //   console.log("user saved successfully");
@@ -78,42 +87,46 @@ catch(err){
         throw new Error("user not found with this email ID");
     
       }
-    
+
       
-        const isValidPassword =user.validatePassword(password);
     
+    const isValidPassword = await user.validatePassword(password);
+    console.log(isValidPassword);
+
+    if(!isValidPassword){
+        throw new Error("user password is invalid");
+    }
+
+        if(isValidPassword){
     
-       if(isValidPassword){
-    
-            const token =await  user.getJWT();
+        const token =await  user.getJWT();
             // console.log(token);
 
-            res.cookie("token",token,{expires: new Date(Date.now()+9000000),httpOnly:true});
+        res.cookie("token",token,{expires: new Date(Date.now()+9000000),httpOnly:true});
             // res.
-            res.send("user logged in successfully");
-    
-        }
-    
-        else{
 
-    
-            throw new Error("user password is invalid");
+            // console.log(user.photoId);
+            
+        res.send(user);
     
         }
-    
-        // if(!isValidPassword){
+
+        // if(!isValid Password){
         //     throw new Error("invalid password");
         // }
     
     }   
 
+
     catch(err){
+        // console.log(photoId);
     
         res.status(401).send("Error: "+ err.message);
     
     }
     
     });
+
 
     authRouter.post("/logout", userAuth, async (req, res) => {
         res.cookie("token", null, {

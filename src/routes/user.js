@@ -14,14 +14,17 @@ const { contentType } = require("express-cookie/lib/response.js");
 const { connection } = require("mongoose");
 
 
-const USER_SAFE_DATA = "firstName lastName gender age ";
+const USER_SAFE_DATA = " firstName lastName gender age photoId bio skills";
+
 
 userRouter.get("/user", async (req,res)=>{
+
 
     // await User.syncIndexes();
 
 
     const userEmail  =  req.body.emailId;
+
 
     try{
 
@@ -40,7 +43,7 @@ userRouter.get("/user", async (req,res)=>{
 
     catch(err){
 
-        res.status(401).send("something went wrong"+err.message);
+        res.status(401).send("something went wrong"+ err.message);
 
     }
 
@@ -48,11 +51,13 @@ userRouter.get("/user", async (req,res)=>{
 })
 
 
+
     userRouter.patch("/user",async (req,res)=>{
     
     const email=req.body.emailId;
     const data= req.body;
         // console.log(email);
+
     const userId=req.body._id;
 
     if( userId===undefined ) {
@@ -60,6 +65,7 @@ userRouter.get("/user", async (req,res)=>{
     }
 
     const filter={ _id:userId  };
+    
     const update=data;
     // console.log(update);
     const options={new:true};
@@ -107,6 +113,7 @@ userRouter.delete("/user",async (req,res)=>{
     }
 
 });
+
 // get all pending connection request for logged in user 
  userRouter.get("/user/requests/received",userAuth,async (req,res)=>{
 
@@ -116,7 +123,7 @@ userRouter.delete("/user",async (req,res)=>{
     const connectionRequests  = await  ConnectionRequest.find({
         toUserId:loggedInUser.id,
         status:"interested"
-    }).populate("fromUserId","firstName lastName");
+    }).populate("fromUserId",USER_SAFE_DATA);
     // .populate("fromUserId",["firstName","lastName"]);
 
 
@@ -145,7 +152,7 @@ userRouter.delete("/user",async (req,res)=>{
 })
 
 
-  userRouter.get("/user/requests/accepted",userAuth,async (req,res)=>{
+  userRouter.get("/user/connections",userAuth,async (req,res)=>{
 
     try{
     const loggedinUser= req.user;
@@ -153,14 +160,15 @@ userRouter.delete("/user",async (req,res)=>{
         $or :  [
             {
                 toUserId:loggedinUser._id,
+                 status:"accepted"
 
             },{
                 fromUserId:loggedinUser._id,
+                 status:"accepted"
             }
 
         ],
-
-        status:"accepted"
+       
     }).populate("fromUserId", USER_SAFE_DATA)
     .populate("toUserId",USER_SAFE_DATA);
 
@@ -169,18 +177,20 @@ userRouter.delete("/user",async (req,res)=>{
         if(row.toUserId._id.toString() === loggedinUser._id.toString()){
             return row.fromUserId;
         }
-        else return row.toUserId;
+         return row.toUserId;
         // row.fromUserId
     
       });
 
-      res.json({
+      // console.log(connectionRequests);
 
-        message:"your connections : ",
-        data
-
-    })
+    //   console.log(data);
+    //   console.log(data[0].toString());
+  
+    
+      res.json({data})
 }
+
 catch(err){
     res.status(400).send("ERROR: "+ err.message)
 }
@@ -188,60 +198,38 @@ catch(err){
       });
 
 
-   userRouter.get("/user/feed",userAuth, async (req,res)=>{
-
-   try{
-
-    const loggedInUser = req.user;
-    // const allUsers = await User.find({});
-    const page = parseInt(req.query.page)||1;
-    let limit  = parseInt(req.query.limit)||10;
-    limit = limit>50 ? 50: limit;
-    const skip = (page-1)*limit;
-
-
-    // console.log(allUsers);
-     
-    const connectionRequests = await ConnectionRequest.find({
-        $or: [
-            {fromUserId: loggedInUser._id},
-            {toUserId: loggedInUser._id}
-        ]
-    }).select("fromUserId toUserId");
-
-    
-    const userToBeHide = new Set();
-
-    connectionRequests.forEach(element => {
-        userToBeHide.add(element);        
-    });
-
-    const users = await User.find({
-        $and:[
-            {
-
-           _id:{ $nin: Array.from(userToBeHide)},
-           },
-
-          {
-            _id:{$ne:loggedInUser._id} 
-          },
-    ]
-    }).select(USER_SAFE_DATA).skip(skip).limit(limit);
-
-     res.json({
-        message:"feed",
-        data:users
-     })
-  
-    }
-
-    catch(err){
-    res.status(400).send(" something went wrong "+  err.message);
-}
-
-
-
-   });
-
-     module.exports = userRouter;
+      userRouter.get("/feed", userAuth, async (req, res) => {
+        try {
+          const loggedInUser = req.user;
+      
+          const page = parseInt(req.query.page) || 1;
+          let limit = parseInt(req.query.limit) || 10;
+          limit = limit > 50 ? 50 : limit;
+          const skip = (page - 1) * limit;
+      
+          const connectionRequests = await ConnectionRequest.find({
+            $or: [{ fromUserId: loggedInUser._id }, { toUserId: loggedInUser._id }],
+          }).select("fromUserId  toUserId");
+      
+          const hideUsersFromFeed = new Set();
+          connectionRequests.forEach((req) => {
+            hideUsersFromFeed.add(req.fromUserId.toString());
+            hideUsersFromFeed.add(req.toUserId.toString());
+          });
+      
+          const users = await User.find({
+            $and: [
+              { _id: { $nin: Array.from(hideUsersFromFeed) } },
+              { _id: { $ne: loggedInUser._id } },
+            ],
+          })
+            .select(USER_SAFE_DATA)
+            .skip(skip)
+            .limit(limit);
+      
+          res.json({ data: users });
+        } catch (err) {
+          res.status(400).json({ message: err.message });
+        }
+      });
+      module.exports = userRouter;

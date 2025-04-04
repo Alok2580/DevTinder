@@ -13,7 +13,7 @@ const validateSignupData = (req)=>{
 };
 
 const validateProfileData = (req)=>{
-    const allowedProfileFields = ["firstName","lastName"];
+    const allowedProfileFields = ["firstName","lastName","photoId","age","gender","bio","about"];
 
      const isAllowed=Object.keys(req.body).every((key)=>{
         return allowedProfileFields.includes(key);

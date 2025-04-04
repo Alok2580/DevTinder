@@ -35,6 +35,7 @@ requestRouter.post("/request/:status/:toUserId",userAuth, async (req,res)=>{
 
         }
 
+
         const isToUserExists=  await User.findById(toUserId);
         if(!isToUserExists){
 

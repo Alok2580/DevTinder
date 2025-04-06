@@ -17,6 +17,8 @@ requestRouter.use(express.json());
 
 // })
 
+const sendEmail =   require("../utils/sendEmail.js");
+
 
 requestRouter.post("/request/:status/:toUserId",userAuth, async (req,res)=>{
 
@@ -26,8 +28,11 @@ requestRouter.post("/request/:status/:toUserId",userAuth, async (req,res)=>{
 
         const fromUserId= user._id;
         const toUserId= req.params.toUserId;
+        const toUser  = await User.findById(toUserId);
+        const fromUser  = await User.findById(fromUserId);
         const status = req.params.status;
         const receiver=await  User.findById(toUserId);
+        console.log(fromUser.firstName);
 
         if(toUserId==fromUserId){
 
@@ -76,6 +81,13 @@ requestRouter.post("/request/:status/:toUserId",userAuth, async (req,res)=>{
 
 
       const data = await connectionRequest.save();
+
+      const emailRes  = await sendEmail.run(
+        `A new friend request from ${fromUser.firstName}` ,
+        `${fromUser.firstName} is ${status} in ${toUser.firstName}`
+          )
+
+          console.log(emailRes);
 
         // console.log(user._id);
       

@@ -1,6 +1,6 @@
 const jwt= require("jsonwebtoken");
 const User= require("../models/user");
-
+require('dotenv').config();
 
 const userAuth=async (req,res,next)=>{
 
@@ -15,7 +15,7 @@ const userAuth=async (req,res,next)=>{
    if(!token) throw new Error("token is not valid");
       // validate the token
 
-      const decoded= await jwt.verify(token,"DEVTinder@790");
+      const decoded= await jwt.verify(token,process.env.JWT_SECRET);
 
    // if token is valid then find the user_id in decode of the token
    const {_id}=decoded;

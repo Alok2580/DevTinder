@@ -15,6 +15,7 @@ profileRouter.get("/profile/view", userAuth ,async (req,res)=>{
     // console.log(user);
     res.send(user);
 
+    
     }
 
 
